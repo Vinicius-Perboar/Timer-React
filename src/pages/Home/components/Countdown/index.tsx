@@ -1,59 +1,55 @@
-import { useEffect, useState } from 'react'
+import { useContext, useEffect } from 'react'
 import { CountdownContainer, Separator } from './styles'
 import { differenceInSeconds } from 'date-fns'
+import { CyclesContext } from '../../../../contexts/CyclesContext'
 
 export function Countdown() {
-  const [amountSecondsPassed, setAmountSecondsPassed] = useState(0)
+  // eslint-disable-next-line @stylistic/max-len
+  const { activeCycle, activeCycleId, markCurrentCycleAsFinished, amountSecondsPassed, setSecondsPassed } = useContext(CyclesContext)
 
   const totalSeconds = activeCycle
-  ? activeCycle.minutesAmount * 60
-  : 0
+    ? activeCycle.minutesAmount * 60
+    : 0
 
   useEffect(() => {
     let interval: number
 
     if (activeCycle) {
       interval = setInterval(() => {
+        // eslint-disable-next-line @stylistic/max-len
         const secondsDifference = differenceInSeconds(new Date(), activeCycle.startDate)
 
         if (secondsDifference >= totalSeconds) {
-          setCycles(state => state.map((cycle) => {
-            if (cycle.id === activeCycleId) {
-              return { ...cycle, finishedDate: new Date() }
-            } else {
-              return cycle
-            }
-          }))
-
-          setAmountSecondsPassed(totalSeconds)
+          markCurrentCycleAsFinished()
+          setSecondsPassed(totalSeconds)
 
           clearInterval(interval)
-        } else { setAmountSecondsPassed(secondsDifference) }
+        } else { setSecondsPassed(secondsDifference) }
       }, 1000)
     }
 
     return () => {
       clearInterval(interval)
     }
-  }, [activeCycle, totalSeconds, activeCycleId])
+  // eslint-disable-next-line @stylistic/max-len
+  }, [activeCycle, totalSeconds, activeCycleId, markCurrentCycleAsFinished, setSecondsPassed])
 
-  function handleCreateNewCycle(data: newCycleFormData) {
-    const id = String(new Date().getTime())
+  const currentSeconds = activeCycle
+    ? totalSeconds - amountSecondsPassed
+    : 0
 
-    const newCycle: Cycle = {
-      id,
-      task: data.task,
-      minutesAmount: data.minutesAmount,
-      startDate: new Date(),
+  const minutesAmount = Math.floor(currentSeconds / 60)
+  const secondsAmount = currentSeconds % 60
+
+  const minutes = String(minutesAmount).padStart(2, '0')
+  const seconds = String(secondsAmount).padStart(2, '0')
+
+  useEffect(() => {
+    if (activeCycle) {
+      document.title = `${minutes}:${seconds}`
     }
+  }, [minutes, seconds, activeCycle])
 
-    setCycles((state) => [...state, newCycle])
-    setActiveCicleId(id)
-    setAmountSecondsPassed(0)
-
-    reset()
-  }
-  
   return (
     <CountdownContainer>
       <span>{minutes[0]}</span>
